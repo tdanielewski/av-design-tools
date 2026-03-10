@@ -4,7 +4,10 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="color-scheme" content="dark">
     <title>AV Room Planner</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link rel="stylesheet" href="style.css">
 </head>
 
@@ -21,6 +24,8 @@
                 <button class="expand-collapse-btn" id="collapse-all-btn" title="Collapse all sections">Collapse
                     All</button>
             </div>
+
+            <!-- Room Dimensions -->
             <div class="control-group" aria-expanded="true" id="cg-room">
                 <div class="control-group-title" data-toggle-group="cg-room">Room Dimensions<svg class="cg-chevron"
                         width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"
@@ -49,10 +54,13 @@
                     <div class="control-row">
                         <div class="control-label"><span>Width</span><span class="value" id="val-room-width"
                                 data-slider="room-width" data-key="roomWidth" data-unit="ft">15' 0"</span>
-                        </div><input type="range" id="room-width" min="8" max="60" step="0.5" value="15">
+                        </div>
+                        <input type="range" id="room-width" min="8" max="60" step="0.5" value="15">
                     </div>
                 </div>
             </div>
+
+            <!-- Table -->
             <div class="control-group" aria-expanded="false" id="cg-table">
                 <div class="control-group-title" data-toggle-group="cg-table">Table<svg class="cg-chevron" width="12"
                         height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"
@@ -61,7 +69,8 @@
                     </svg></div>
                 <div class="control-group-body">
                     <div class="control-row">
-                        <div class="control-label"><span>Shape</span></div><select id="table-shape">
+                        <div class="control-label"><span>Shape</span></div>
+                        <select id="table-shape">
                             <option value="rectangular">Rectangular</option>
                             <option value="oval">Oval</option>
                             <option value="circle">Circle</option>
@@ -72,25 +81,29 @@
                         <div class="control-label"><span>Table Length</span><span class="value" id="val-table-length"
                                 data-slider="table-length" data-key="tableLength" data-unit="ft">8'
                                 0"</span>
-                        </div><input type="range" id="table-length" min="4" max="24" step="0.5" value="8">
+                        </div>
+                        <input type="range" id="table-length" min="4" max="24" step="0.5" value="8">
                     </div>
                     <div class="control-row">
                         <div class="control-label"><span>Table Width</span><span class="value" id="val-table-width"
                                 data-slider="table-width" data-key="tableWidth" data-unit="ft">4'
-                                0"</span></div>
+                                0"</span>
+                        </div>
                         <input type="range" id="table-width" min="2" max="8" step="0.5" value="4">
                     </div>
                     <div class="control-row">
                         <div class="control-label"><span>Table Height (AFF)</span><span class="value"
                                 id="val-table-height" data-slider="table-height" data-key="tableHeight"
                                 data-unit="in">30"</span>
-                        </div><input type="range" id="table-height" min="24" max="42" step="1" value="30">
+                        </div>
+                        <input type="range" id="table-height" min="24" max="42" step="1" value="30">
                     </div>
                     <div class="control-row">
                         <div class="control-label"><span>Distance from Display</span><span class="value"
                                 id="val-table-dist" data-slider="table-dist" data-key="tableDist" data-unit="ft">4'
-                                0"</span></div><input type="range" id="table-dist" min="0" max="30" step="0.5"
-                            value="4">
+                                0"</span>
+                        </div>
+                        <input type="range" id="table-dist" min="0" max="30" step="0.5" value="4">
                     </div>
                     <div class="room-warning" id="room-warning">
                         <div class="room-warning-header"><span class="room-warning-dot"></span> Layout Conflict</div>
@@ -98,6 +111,8 @@
                     </div>
                 </div>
             </div>
+
+            <!-- Display -->
             <div class="control-group" aria-expanded="false" id="cg-display">
                 <div class="control-group-title" data-toggle-group="cg-display">Display<svg class="cg-chevron"
                         width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"
@@ -107,24 +122,29 @@
                 <div class="control-group-body">
                     <div class="control-row">
                         <div class="control-label"><span>Number of Displays</span></div>
-                        <div class="toggle-group" id="display-count-toggle"><button class="toggle-btn active"
-                                data-val="1" data-action="set-display-count">Single</button><button class="toggle-btn"
-                                data-val="2" data-action="set-display-count">Dual</button></div>
+                        <div class="toggle-group" id="display-count-toggle">
+                            <button class="toggle-btn active" data-val="1" data-action="set-display-count">Single</button>
+                            <button class="toggle-btn" data-val="2" data-action="set-display-count">Dual</button>
+                        </div>
                     </div>
                     <div class="control-row">
                         <div class="control-label"><span>Display Size (Diagonal)</span><span class="value"
                                 id="val-display-size" data-slider="display-size" data-key="displaySize"
-                                data-unit="in">65"</span></div><input type="range" id="display-size" min="40" max="100"
-                            step="5" value="65">
+                                data-unit="in">65"</span>
+                        </div>
+                        <input type="range" id="display-size" min="40" max="100" step="5" value="65">
                     </div>
                     <div class="control-row">
                         <div class="control-label"><span>Display Elevation (Center)</span><span class="value"
                                 id="val-display-elev" data-slider="display-elev" data-key="displayElev"
-                                data-unit="in">54"</span></div><input type="range" id="display-elev" min="40" max="84"
-                            step="1" value="54">
+                                data-unit="in">54"</span>
+                        </div>
+                        <input type="range" id="display-elev" min="40" max="84" step="1" value="54">
                     </div>
                 </div>
             </div>
+
+            <!-- AV Equipment -->
             <div class="control-group" aria-expanded="true" id="cg-equipment">
                 <div class="control-group-title" data-toggle-group="cg-equipment">AV Equipment<svg class="cg-chevron"
                         width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"
@@ -132,47 +152,51 @@
                         <polyline points="6 9 12 15 18 9"></polyline>
                     </svg></div>
                 <div class="control-group-body">
-                    <div class="brand-toggle" id="brand-toggle"><button class="brand-btn neat-btn active"
-                            data-val="neat" data-action="set-brand">neat.</button><button class="brand-btn logi-btn"
-                            data-val="logitech" data-action="set-brand">logitech</button></div>
+                    <div class="brand-toggle" id="brand-toggle">
+                        <button class="brand-btn neat-btn active" data-val="neat" data-action="set-brand">neat.</button>
+                        <button class="brand-btn logi-btn" data-val="logitech" data-action="set-brand">logitech</button>
+                    </div>
                     <div class="control-row">
-                        <div class="control-label"><span>Video Bar</span></div><select id="video-bar"></select>
+                        <div class="control-label"><span>Video Bar</span></div>
+                        <select id="video-bar"></select>
                     </div>
                     <div class="control-row" id="mount-row">
                         <div class="control-label"><span>Mount Position</span></div>
-                        <div class="toggle-group" id="mount-pos-toggle"><button class="toggle-btn" data-val="above"
-                                data-action="set-mount-pos">Above Display</button><button class="toggle-btn active"
-                                data-val="below" data-action="set-mount-pos">Below Display</button></div>
+                        <div class="toggle-group" id="mount-pos-toggle">
+                            <button class="toggle-btn" data-val="above" data-action="set-mount-pos">Above Display</button>
+                            <button class="toggle-btn active" data-val="below" data-action="set-mount-pos">Below Display</button>
+                        </div>
                     </div>
-                    <div class="check-row" style="margin-top:16px" id="center-row"><span id="center-label">Add Neat
-                            Center
-                            (Companion)</span><label class="switch"><input type="checkbox" id="include-center"><span
-                                class="slider"></span></label></div>
-                    <div class="check-row" id="micpod-row" style="display:none"><span
-                            style="display:flex;align-items:center">Rally
-                            Mic Pod (Far End)<div class="tooltip-container"><svg width="14" height="14"
-                                    viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"
-                                    stroke-linecap="round" stroke-linejoin="round"
+                    <div class="check-row" style="margin-top:16px" id="center-row">
+                        <span id="center-label">Add Neat Center (Companion)</span>
+                        <label class="switch"><input type="checkbox" id="include-center"><span class="slider"></span></label>
+                    </div>
+                    <div class="check-row" id="micpod-row" style="display:none">
+                        <span style="display:flex;align-items:center">Rally Mic Pod (Far End)
+                            <div class="tooltip-container">
+                                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+                                    stroke-width="2" stroke-linecap="round" stroke-linejoin="round"
                                     style="color:var(--text-muted);cursor:help">
                                     <circle cx="12" cy="12" r="10"></circle>
                                     <line x1="12" y1="16" x2="12" y2="12"></line>
                                     <line x1="12" y1="8" x2="12.01" y2="8"></line>
                                 </svg>
                                 <div class="tooltip-text">Places a Rally Mic Pod at the far end of the table for
-                                    enhanced
-                                    voice pickup.
-                                    When used with Sight, do not place near the display — front-of-room mics already
-                                    cover
-                                    that zone.</div>
-                            </div></span><label class="switch"><input type="checkbox" id="include-micpod"><span
-                                class="slider"></span></label></div>
+                                    enhanced voice pickup. When used with Sight, do not place near the display —
+                                    front-of-room mics already cover that zone.</div>
+                            </div>
+                        </span>
+                        <label class="switch"><input type="checkbox" id="include-micpod"><span class="slider"></span></label>
+                    </div>
                     <div class="mic-warning" id="mic-warning">
                         <div class="mic-warning-header"><span class="mic-warning-dot"></span> Coverage Warning</div>
-                        <div class="mic-warning-text" id="mic-warning-text"></div><button class="mic-warning-btn"
-                            id="mic-warning-btn"><span>+</span> Add companion</button>
+                        <div class="mic-warning-text" id="mic-warning-text"></div>
+                        <button class="mic-warning-btn" id="mic-warning-btn"><span>+</span> Add companion</button>
                     </div>
                 </div>
             </div>
+
+            <!-- View Mode -->
             <div class="control-group" aria-expanded="false" id="cg-viewmode">
                 <div class="control-group-title" data-toggle-group="cg-viewmode">View Mode<svg class="cg-chevron"
                         width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"
@@ -181,12 +205,15 @@
                     </svg></div>
                 <div class="control-group-body">
                     <div class="control-row">
-                        <div class="toggle-group" id="view-mode-toggle"><button class="toggle-btn active" data-val="top"
-                                data-action="set-view-mode">Top-Down View</button><button class="toggle-btn"
-                                data-val="pov" data-action="set-view-mode">1st Person POV</button></div>
+                        <div class="toggle-group" id="view-mode-toggle">
+                            <button class="toggle-btn active" data-val="top" data-action="set-view-mode">Top-Down View</button>
+                            <button class="toggle-btn" data-val="pov" data-action="set-view-mode">1st Person POV</button>
+                        </div>
                     </div>
                 </div>
             </div>
+
+            <!-- Coverage Overlays -->
             <div class="control-group" aria-expanded="false" id="cg-overlays">
                 <div class="control-group-title" data-toggle-group="cg-overlays">Coverage Overlays<svg
                         class="cg-chevron" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor"
@@ -194,19 +221,22 @@
                         <polyline points="6 9 12 15 18 9"></polyline>
                     </svg></div>
                 <div class="control-group-body">
-                    <div class="check-row"><span style="display:flex;align-items:center">Viewing Angle (60°)<div
-                                class="tooltip-container"><svg width="14" height="14" viewBox="0 0 24 24" fill="none"
-                                    stroke="currentColor" stroke-width="2" stroke-linecap="round"
-                                    stroke-linejoin="round" style="color:var(--text-muted);cursor:help">
+                    <div class="check-row">
+                        <span style="display:flex;align-items:center">Viewing Angle (60°)
+                            <div class="tooltip-container">
+                                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+                                    stroke-width="2" stroke-linecap="round" stroke-linejoin="round"
+                                    style="color:var(--text-muted);cursor:help">
                                     <circle cx="12" cy="12" r="10"></circle>
                                     <line x1="12" y1="16" x2="12" y2="12"></line>
                                     <line x1="12" y1="8" x2="12.01" y2="8"></line>
                                 </svg>
                                 <div class="tooltip-text">Based on AVIXA guidelines. Viewers outside this cone may
-                                    experience color
-                                    degradation and neck strain.</div>
-                            </div></span><label class="switch"><input type="checkbox" id="show-view-angle"><span
-                                class="slider"></span></label></div>
+                                    experience color degradation and neck strain.</div>
+                            </div>
+                        </span>
+                        <label class="switch"><input type="checkbox" id="show-view-angle"><span class="slider"></span></label>
+                    </div>
                     <div class="check-row"><span>Camera FOV</span><label class="switch"><input type="checkbox"
                                 id="show-camera" checked><span class="slider"></span></label></div>
                     <div class="check-row"><span>Mic Pickup Range</span><label class="switch"><input type="checkbox"
@@ -215,6 +245,8 @@
                                 checked><span class="slider"></span></label></div>
                 </div>
             </div>
+
+            <!-- POV Settings (hidden by default) -->
             <div class="control-group" id="pov-controls" aria-expanded="true" style="display:none">
                 <div class="control-group-title" data-toggle-group="pov-controls">POV Settings<svg class="cg-chevron"
                         width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"
@@ -226,23 +258,27 @@
                         <div class="control-label"><span>Viewer Distance</span><span class="value" id="val-viewer-dist"
                                 data-slider="viewer-dist" data-key="viewerDist" data-unit="ft">12'
                                 0"</span>
-                        </div><input type="range" id="viewer-dist" min="1" max="60" step="0.5" value="12">
+                        </div>
+                        <input type="range" id="viewer-dist" min="1" max="60" step="0.5" value="12">
                     </div>
                     <div class="control-row">
                         <div class="control-label"><span>Viewer Offset (L/R)</span><span class="value"
                                 id="val-viewer-offset" data-slider="viewer-offset" data-key="viewerOffset"
-                                data-unit="ft">0'
-                                0"</span></div><input type="range" id="viewer-offset" min="-15" max="15" step="0.5"
-                            value="0">
+                                data-unit="ft">0' 0"</span>
+                        </div>
+                        <input type="range" id="viewer-offset" min="-15" max="15" step="0.5" value="0">
                     </div>
                     <div class="control-row">
                         <div class="control-label"><span>Posture</span></div>
-                        <div class="toggle-group" id="posture-toggle"><button class="toggle-btn active"
-                                data-val="seated" data-action="set-posture">Seated</button><button class="toggle-btn"
-                                data-val="standing" data-action="set-posture">Standing</button></div>
+                        <div class="toggle-group" id="posture-toggle">
+                            <button class="toggle-btn active" data-val="seated" data-action="set-posture">Seated</button>
+                            <button class="toggle-btn" data-val="standing" data-action="set-posture">Standing</button>
+                        </div>
                     </div>
                 </div>
             </div>
+
+            <!-- Actions -->
             <div class="control-group" style="border-bottom:none;padding-bottom:24px">
                 <button class="download-btn" id="download-btn">↓ Download Layout</button>
                 <div class="action-btn-row">
@@ -255,6 +291,7 @@
             </div>
         </div>
     </div>
+
     <div class="main">
         <div class="canvas-header">
             <div class="room-info">
@@ -296,6 +333,7 @@
             <div id="info-content"></div>
         </div>
     </div>
+
     <script src="data.js"></script>
     <script src="app.js" defer></script>
 </body>
