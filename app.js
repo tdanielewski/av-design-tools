@@ -25,6 +25,32 @@ let ppf_g = 1;
 // Global mouse position in canvas CSS pixels (updated on mousemove)
 let mousePos = { x: 0, y: 0 };
 
+// ── DOM Element Cache ────────────────────────────────────────
+// Eliminates repeated getElementById calls on every render/input.
+const DOM = {};
+function cacheDOMRefs() {
+    const ids = [
+        'room-length', 'room-width', 'table-length', 'table-width',
+        'table-height', 'table-dist', 'display-size', 'display-elev',
+        'viewer-dist', 'viewer-offset', 'table-shape', 'video-bar',
+        'include-center', 'include-micpod', 'show-camera', 'show-mic',
+        'show-grid', 'show-view-angle', 'brand-toggle', 'display-count-toggle',
+        'mount-pos-toggle', 'view-mode-toggle', 'posture-toggle',
+        'pov-controls', 'cg-overlays', 'center-label', 'micpod-row',
+        'mic-warning', 'mic-warning-btn', 'mic-warning-text',
+        'room-warning', 'room-warning-text',
+        'header-room', 'header-device', 'mount-row', 'info-overlay',
+        'info-content', 'info-title', 'undo-btn', 'redo-btn', 'share-btn',
+        'legend-camera', 'legend-mic', 'download-btn', 'export-btn',
+        'import-btn', 'import-file-input', 'expand-all-btn', 'collapse-all-btn',
+        'val-room-length', 'val-room-width', 'val-table-length', 'val-table-width',
+        'val-table-height', 'val-table-dist', 'val-display-size', 'val-display-elev',
+        'val-viewer-dist', 'val-viewer-offset'
+    ];
+    ids.forEach(id => { DOM[id] = document.getElementById(id); });
+}
+cacheDOMRefs();
+
 // ── Utility Functions ────────────────────────────────────────
 
 /** Convert degrees to radians */
@@ -40,6 +66,11 @@ function formatFtIn(v) {
     const i = Math.round((a - f) * 12);
     if (i === 12) return `${s}${f + 1}' 0"`;
     return `${s}${f}' ${i}"`;
+}
+
+/** Centralized value formatter — returns the correct string for any unit */
+function formatValue(v, unit) {
+    return unit === 'in' ? `${v}"` : formatFtIn(v);
 }
 
 /** Return the equipment key for the current brand's center device */
@@ -81,6 +112,28 @@ function scheduleRender() {
     });
 }
 
+// ── Toast Notification System ────────────────────────────────
+// Replaces alert() with a styled, auto-dismissing notification.
+function showToast(message, type = 'info') {
+    let container = document.getElementById('toast-container');
+    if (!container) {
+        container = document.createElement('div');
+        container.id = 'toast-container';
+        document.body.appendChild(container);
+    }
+    const toast = document.createElement('div');
+    toast.className = `toast toast-${type}`;
+    const icons = { error: '✕', success: '✓', info: 'ℹ' };
+    toast.innerHTML = `<span class="toast-icon">${icons[type] || icons.info}</span><span>${message}</span>`;
+    container.appendChild(toast);
+    // Trigger entrance animation
+    requestAnimationFrame(() => toast.classList.add('toast-visible'));
+    setTimeout(() => {
+        toast.classList.remove('toast-visible');
+        toast.addEventListener('transitionend', () => toast.remove());
+    }, 4000);
+}
+
 // ═══════════════════════════════════════════════════════════════
 //  UI STATE MANAGEMENT
 // ═══════════════════════════════════════════════════════════════
@@ -99,12 +152,12 @@ function setBrand(brand) {
     }
 
     // Highlight the active brand button
-    document.getElementById('brand-toggle')
+    DOM['brand-toggle']
         .querySelectorAll('.brand-btn')
         .forEach(b => b.classList.toggle('active', b.dataset.val === brand));
 
     // Rebuild video bar <select> with brand-filtered options
-    const sel = document.getElementById('video-bar');
+    const sel = DOM['video-bar'];
     sel.innerHTML = '';
     Object.keys(EQUIPMENT).forEach(k => {
         const e = EQUIPMENT[k];
@@ -120,15 +173,15 @@ function setBrand(brand) {
     // Reset companion devices when switching brands
     state.includeCenter = false;
     state.includeMicPod = false;
-    document.getElementById('include-center').checked = false;
-    document.getElementById('include-micpod').checked = false;
+    DOM['include-center'].checked = false;
+    DOM['include-micpod'].checked = false;
 
     // Update companion label and mic pod visibility
-    document.getElementById('center-label').textContent =
+    DOM['center-label'].textContent =
         brand === 'logitech'
             ? 'Add Logitech Sight (Companion)'
             : 'Add Neat Center (Companion)';
-    document.getElementById('micpod-row').style.display =
+    DOM['micpod-row'].style.display =
         brand === 'logitech' ? '' : 'none';
 
     if (!_suppressHistory) pushHistory();
@@ -138,7 +191,7 @@ function setBrand(brand) {
 /** Set the number of displays (1 or 2) */
 function setDisplayCount(n) {
     state.displayCount = n;
-    document.getElementById('display-count-toggle')
+    DOM['display-count-toggle']
         .querySelectorAll('.toggle-btn')
         .forEach(b => b.classList.toggle('active', parseInt(b.dataset.val) === n));
     if (!_suppressHistory) pushHistory();
@@ -148,7 +201,7 @@ function setDisplayCount(n) {
 /** Set the bar mount position (above / below display) */
 function setMountPos(p) {
     state.mountPos = p;
-    document.getElementById('mount-pos-toggle')
+    DOM['mount-pos-toggle']
         .querySelectorAll('.toggle-btn')
         .forEach(b => b.classList.toggle('active', b.dataset.val === p));
     if (!_suppressHistory) pushHistory();
@@ -158,28 +211,28 @@ function setMountPos(p) {
 /** Switch between top-down and first-person POV */
 function setViewMode(m) {
     state.viewMode = m;
-    document.getElementById('view-mode-toggle')
+    DOM['view-mode-toggle']
         .querySelectorAll('.toggle-btn')
         .forEach(b => b.classList.toggle('active', b.dataset.val === m));
 
     if (m === 'pov') {
-        document.getElementById('pov-controls').style.display = 'block';
-        document.getElementById('cg-overlays').style.display = 'none';
+        DOM['pov-controls'].style.display = 'block';
+        DOM['cg-overlays'].style.display = 'none';
 
         // Auto-set viewer distance to table far edge if it was still at default
         if (state.viewerDist === 12 && state.tableDist + state.tableLength !== 12) {
             state.viewerDist = Math.max(1, state.tableDist + state.tableLength);
-            document.getElementById('viewer-dist').value = state.viewerDist;
-            document.getElementById('val-viewer-dist').textContent = formatFtIn(state.viewerDist);
+            DOM['viewer-dist'].value = state.viewerDist;
+            DOM['val-viewer-dist'].textContent = formatFtIn(state.viewerDist);
         }
 
         // Clamp slider ranges to room dims
-        document.getElementById('viewer-dist').max = state.roomLength;
-        document.getElementById('viewer-offset').min = -state.roomWidth / 2;
-        document.getElementById('viewer-offset').max = state.roomWidth / 2;
+        DOM['viewer-dist'].max = state.roomLength;
+        DOM['viewer-offset'].min = -state.roomWidth / 2;
+        DOM['viewer-offset'].max = state.roomWidth / 2;
     } else {
-        document.getElementById('pov-controls').style.display = 'none';
-        document.getElementById('cg-overlays').style.display = 'block';
+        DOM['pov-controls'].style.display = 'none';
+        DOM['cg-overlays'].style.display = 'block';
     }
 
     if (!_suppressHistory) pushHistory();
@@ -197,7 +250,7 @@ function setViewMode(m) {
 /** Set viewer posture (seated / standing) */
 function setPosture(p) {
     state.posture = p;
-    document.getElementById('posture-toggle')
+    DOM['posture-toggle']
         .querySelectorAll('.toggle-btn')
         .forEach(b => b.classList.toggle('active', b.dataset.val === p));
     if (!_suppressHistory) pushHistory();
@@ -265,10 +318,10 @@ function applyPreset(len, wid, targetBtn) {
     state.roomLength = len;
     state.roomWidth = wid;
 
-    document.getElementById('room-length').value = len;
-    document.getElementById('room-width').value = wid;
-    document.getElementById('val-room-length').textContent = formatFtIn(len);
-    document.getElementById('val-room-width').textContent = formatFtIn(wid);
+    DOM['room-length'].value = len;
+    DOM['room-width'].value = wid;
+    DOM['val-room-length'].textContent = formatFtIn(len);
+    DOM['val-room-width'].textContent = formatFtIn(wid);
 
     // Highlight the active preset pill
     document.querySelectorAll('.preset-pill').forEach(p => p.classList.remove('active'));
@@ -276,9 +329,9 @@ function applyPreset(len, wid, targetBtn) {
 
     // Sync POV slider ranges to new room size
     if (state.viewMode === 'pov') {
-        document.getElementById('viewer-dist').max = len;
-        document.getElementById('viewer-offset').min = -wid / 2;
-        document.getElementById('viewer-offset').max = wid / 2;
+        DOM['viewer-dist'].max = len;
+        DOM['viewer-offset'].min = -wid / 2;
+        DOM['viewer-offset'].max = wid / 2;
     }
 
     pushHistory();
@@ -288,17 +341,17 @@ function applyPreset(len, wid, targetBtn) {
 // ── Info Overlay ─────────────────────────────────────────────
 
 function toggleOverlay() {
-    document.getElementById('info-overlay').classList.toggle('minimized');
+    DOM['info-overlay'].classList.toggle('minimized');
 }
 
 /** Toggle camera/mic overlay from the legend chips */
 function toggleOverlayLegend(which) {
     if (which === 'camera') {
         state.showCamera = !state.showCamera;
-        document.getElementById('show-camera').checked = state.showCamera;
+        DOM['show-camera'].checked = state.showCamera;
     } else {
         state.showMic = !state.showMic;
-        document.getElementById('show-mic').checked = state.showMic;
+        DOM['show-mic'].checked = state.showMic;
     }
     updateLegendState();
     pushHistory();
@@ -306,8 +359,8 @@ function toggleOverlayLegend(which) {
 }
 
 function updateLegendState() {
-    document.getElementById('legend-camera').classList.toggle('inactive', !state.showCamera);
-    document.getElementById('legend-mic').classList.toggle('inactive', !state.showMic);
+    DOM['legend-camera'].classList.toggle('inactive', !state.showCamera);
+    DOM['legend-mic'].classList.toggle('inactive', !state.showMic);
 }
 
 // ── Editable Value Badges ────────────────────────────────────
@@ -395,38 +448,39 @@ document.querySelectorAll('.control-label .value[data-slider]').forEach(badge =>
 // of calling render() directly.
 
 function bindSlider(id, sk, vl) {
-    document.getElementById(id).addEventListener('input', function () {
+    const unit = (sk === 'displaySize' || sk === 'displayElev' || sk === 'tableHeight') ? 'in' : 'ft';
+    (DOM[id] || document.getElementById(id)).addEventListener('input', function () {
         let v = parseFloat(this.value);
 
         // Mirror circle table sync
         if (state.tableShape === 'circle') {
             if (sk === 'tableLength') {
                 state.tableWidth = v;
-                document.getElementById('table-width').value = v;
-                document.getElementById('val-table-width').textContent = formatFtIn(v);
+                DOM['table-width'].value = v;
+                DOM['val-table-width'].textContent = formatFtIn(v);
             } else if (sk === 'tableWidth') {
                 state.tableLength = v;
-                document.getElementById('table-length').value = v;
-                document.getElementById('val-table-length').textContent = formatFtIn(v);
+                DOM['table-length'].value = v;
+                DOM['val-table-length'].textContent = formatFtIn(v);
             }
         }
 
         state[sk] = v;
+        const badge = DOM[vl];
+        badge.textContent = formatValue(v, unit);
 
-        // Update the display badge text
-        let t = formatFtIn(v);
-        if (sk === 'displaySize' || sk === 'displayElev' || sk === 'tableHeight') {
-            t = `${v}"`;
-        }
-        document.getElementById(vl).textContent = t;
+        // Trigger micro-animation on the value badge
+        badge.classList.remove('value-updated');
+        void badge.offsetWidth; // force reflow to restart animation
+        badge.classList.add('value-updated');
 
-        pushHistory();
-        scheduleRender();  // rAF-debounced instead of direct render()
+        debouncedPushHistory();
+        scheduleRender();
     });
 }
 
 function bindSelect(id, sk) {
-    document.getElementById(id).addEventListener('change', function () {
+    (DOM[id] || document.getElementById(id)).addEventListener('change', function () {
         state[sk] = this.value;
 
         // When switching to circle, enforce equal length/width
@@ -434,22 +488,22 @@ function bindSelect(id, sk) {
             const m = Math.max(state.tableLength, state.tableWidth);
             state.tableLength = m;
             state.tableWidth = m;
-            document.getElementById('table-length').value = m;
-            document.getElementById('table-width').value = m;
-            document.getElementById('val-table-length').textContent = formatFtIn(m);
-            document.getElementById('val-table-width').textContent = formatFtIn(m);
+            DOM['table-length'].value = m;
+            DOM['table-width'].value = m;
+            DOM['val-table-length'].textContent = formatFtIn(m);
+            DOM['val-table-width'].textContent = formatFtIn(m);
         }
 
         // Auto-scale display size for specific board models
         if (sk === 'videoBar') {
             if (this.value === 'neat-board-50') {
                 state.displaySize = 50;
-                document.getElementById('display-size').value = 50;
-                document.getElementById('val-display-size').textContent = '50"';
+                DOM['display-size'].value = 50;
+                DOM['val-display-size'].textContent = '50"';
             } else if (this.value === 'neat-board-pro') {
                 state.displaySize = 65;
-                document.getElementById('display-size').value = 65;
-                document.getElementById('val-display-size').textContent = '65"';
+                DOM['display-size'].value = 65;
+                DOM['val-display-size'].textContent = '65"';
             }
         }
 
@@ -459,7 +513,7 @@ function bindSelect(id, sk) {
 }
 
 function bindCheckbox(id, sk) {
-    document.getElementById(id).addEventListener('change', function () {
+    (DOM[id] || document.getElementById(id)).addEventListener('change', function () {
         state[sk] = this.checked;
         pushHistory();
         render();
@@ -520,7 +574,7 @@ function downloadLayout() {
 
 function enableCompanion() {
     state.includeCenter = true;
-    document.getElementById('include-center').checked = true;
+    DOM['include-center'].checked = true;
     pushHistory();
     render();
 }
@@ -530,10 +584,13 @@ function checkMicRange() {
     const fe = state.tableDist + state.tableLength;
     const ex = fe > eq.micRange;
 
-    const w = document.getElementById('mic-warning');
-    const b = document.getElementById('mic-warning-btn');
-    const t = document.getElementById('mic-warning-text');
+    const w = DOM['mic-warning'];
+    const b = DOM['mic-warning-btn'];
+    const t = DOM['mic-warning-text'];
     const cn = state.brand === 'logitech' ? 'Logitech Sight' : 'Neat Center';
+
+    // Always remove old listener to prevent leak — re-added below only when needed
+    b.removeEventListener('click', enableCompanion);
 
     if (ex && !state.includeCenter) {
         // Warn user: mic can't reach the table's far edge
@@ -580,7 +637,7 @@ function importConfig(event) {
             pushHistory();
             render();
         } catch (err) {
-            alert('Could not import: invalid JSON config file.');
+            showToast('Could not import: invalid JSON config file.', 'error');
         }
     };
     reader.readAsText(file);
@@ -1134,11 +1191,11 @@ function drawScaleBar(rx, ry, rl, ppf) {
  * Update the header bar and info overlay after a render.
  */
 function updateHeaderDOM(eq) {
-    document.getElementById('header-room').textContent =
+    DOM['header-room'].textContent =
         `${formatFtIn(state.roomLength)} × ${formatFtIn(state.roomWidth)}`;
-    document.getElementById('header-device').textContent =
+    DOM['header-device'].textContent =
         eq.name + (state.includeCenter ? ' + ' + EQUIPMENT[getCenterEqKey()].name : '');
-    document.getElementById('mount-row').style.display =
+    DOM['mount-row'].style.display =
         (eq.type === 'bar') ? '' : 'none';
 
     updateInfoOverlay(eq, state.includeCenter ? EQUIPMENT[getCenterEqKey()] : null);
@@ -1592,9 +1649,9 @@ function renderPOV(cw, ch, dpr) {
     }
 
     // ── Update DOM ───────────────────────────────────────
-    document.getElementById('header-room').textContent =
+    DOM['header-room'].textContent =
         `POV: ${formatFtIn(vd)} from display`;
-    document.getElementById('header-device').textContent =
+    DOM['header-device'].textContent =
         eq.name + (state.includeCenter ? ' + ' + EQUIPMENT[getCenterEqKey()].name : '');
     updateInfoOverlay(eq, state.includeCenter ? EQUIPMENT[getCenterEqKey()] : null);
     checkMicRange();
@@ -1637,13 +1694,13 @@ function updateInfoOverlay(eq, centerEq) {
         );
     }
 
-    document.getElementById('info-content').innerHTML = rows.map(r =>
+    DOM['info-content'].innerHTML = rows.map(r =>
         r[0] === '---'
             ? '<div style="height:1px;background:var(--border);margin:7px 0"></div>'
             : `<div class="info-row"><span>${r[0]}</span><span class="info-val">${r[1]}</span></div>`
     ).join('');
 
-    document.getElementById('info-title').innerHTML =
+    DOM['info-title'].innerHTML =
         '◆ ' + eq.name + (centerEq ? ' + ' + centerEq.name : '');
 }
 
@@ -1655,6 +1712,14 @@ const MAX_HISTORY = 50;
 let history = [];
 let historyIndex = -1;
 let _suppressHistory = false;
+
+// Debounced pushHistory — prevents flooding the undo stack during
+// rapid slider drags. Captures a snapshot 300ms after user stops.
+let _historyDebounceTimer = null;
+function debouncedPushHistory() {
+    clearTimeout(_historyDebounceTimer);
+    _historyDebounceTimer = setTimeout(() => pushHistory(), 300);
+}
 
 function snapshotState() {
     return JSON.parse(JSON.stringify(state));
@@ -1673,8 +1738,8 @@ function pushHistory() {
 }
 
 function updateUndoRedoBtns() {
-    document.getElementById('undo-btn').disabled = historyIndex <= 0;
-    document.getElementById('redo-btn').disabled = historyIndex >= history.length - 1;
+    DOM['undo-btn'].disabled = historyIndex <= 0;
+    DOM['redo-btn'].disabled = historyIndex >= history.length - 1;
 }
 
 function applyHistorySnapshot(snap) {
@@ -1749,10 +1814,11 @@ function loadFromHash() {
 function copyShareLink() {
     serializeToHash();
     navigator.clipboard.writeText(window.location.href).then(() => {
-        const btn = document.getElementById('share-btn');
+        const btn = DOM['share-btn'];
         const orig = btn.textContent;
         btn.textContent = '✓ Copied!';
         btn.style.color = 'var(--accent)';
+        showToast('Share link copied to clipboard', 'success');
         setTimeout(() => { btn.textContent = orig; btn.style.color = ''; }, 2000);
     });
 }
@@ -1775,31 +1841,31 @@ function syncUIFromState() {
         'viewer-offset': ['viewerOffset', 'val-viewer-offset', 'ft'],
     };
     for (const [id, [sk, vid, unit]] of Object.entries(sliderMap)) {
-        const el = document.getElementById(id);
+        const el = DOM[id];
         if (el) el.value = state[sk];
-        const ve = document.getElementById(vid);
-        if (ve) ve.textContent = unit === 'in' ? `${state[sk]}"` : formatFtIn(state[sk]);
+        const ve = DOM[vid];
+        if (ve) ve.textContent = formatValue(state[sk], unit);
     }
 
     // Table shape
-    const ts = document.getElementById('table-shape');
+    const ts = DOM['table-shape'];
     if (ts) ts.value = state.tableShape;
 
     // Brand + video bar
     setBrand(state.brand);
-    const vbSel = document.getElementById('video-bar');
+    const vbSel = DOM['video-bar'];
     if (vbSel && EQUIPMENT[state.videoBar]) vbSel.value = state.videoBar;
 
     // Mount position
     setMountPos(state.mountPos);
 
     // Checkboxes
-    document.getElementById('include-center').checked = state.includeCenter;
-    document.getElementById('include-micpod').checked = state.includeMicPod;
-    document.getElementById('show-camera').checked = state.showCamera;
-    document.getElementById('show-mic').checked = state.showMic;
-    document.getElementById('show-grid').checked = state.showGrid;
-    document.getElementById('show-view-angle').checked = state.showViewAngle;
+    DOM['include-center'].checked = state.includeCenter;
+    DOM['include-micpod'].checked = state.includeMicPod;
+    DOM['show-camera'].checked = state.showCamera;
+    DOM['show-mic'].checked = state.showMic;
+    DOM['show-grid'].checked = state.showGrid;
+    DOM['show-view-angle'].checked = state.showViewAngle;
 
     // Display count, posture, view mode
     setDisplayCount(state.displayCount);
@@ -1940,9 +2006,9 @@ canvas.addEventListener('mousemove', e => {
 
         if (nd !== state.tableDist) {
             state.tableDist = nd;
-            document.getElementById('table-dist').value = nd;
-            document.getElementById('val-table-dist').textContent = formatFtIn(nd);
-            render();
+            DOM['table-dist'].value = nd;
+            DOM['val-table-dist'].textContent = formatFtIn(nd);
+            scheduleRender(); // rAF-guarded instead of direct render()
         }
     } else if (isDraggingCenter) {
         let nx = (mx - ox) / ppf;
@@ -1953,7 +2019,7 @@ canvas.addEventListener('mousemove', e => {
         ny = Math.max(-state.tableLength / 2, Math.min(ny, state.tableLength / 2));
 
         state.centerPos = { x: nx, y: ny };
-        render();
+        scheduleRender(); // rAF-guarded instead of direct render()
     }
 });
 
@@ -1976,8 +2042,8 @@ canvas.addEventListener('mouseleave', () => {
 // ── Room vs Table Dimension Validation ───────────────────────
 
 function checkRoomWarnings() {
-    const w = document.getElementById('room-warning');
-    const t = document.getElementById('room-warning-text');
+    const w = DOM['room-warning'];
+    const t = DOM['room-warning-text'];
     const issues = [];
 
     if (state.tableWidth > state.roomWidth) {
@@ -2137,7 +2203,7 @@ initSliderTracks();
 
 // Auto-minimize info overlay on small screens
 if (window.innerWidth <= 900) {
-    document.getElementById('info-overlay').classList.add('minimized');
+    DOM['info-overlay'].classList.add('minimized');
 }
 
 // Load from URL hash if present, then initial render + first snapshot

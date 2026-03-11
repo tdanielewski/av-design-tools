@@ -82,7 +82,7 @@ const EQUIPMENT = {
     },
     'logitech-sight': {
         name: 'Logitech Sight', brand: 'logitech',
-        width: 0.56, depth: 0.56, height: 0.98,
+        width: 0.308, depth: 0.308, height: 0.955, // 3.7 × 3.7 × 11.46 in (93.4 × 93.4 × 291.2 mm)
         cameraFOV: 315, cameraRange: 7.5,
         micCount: 7, micDesc: '7 beamforming (360°)',
         micRange: 7.5, micArc: 360,
