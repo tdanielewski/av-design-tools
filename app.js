@@ -22,6 +22,9 @@ const ctx = canvas.getContext('2d');
 // Global pixels-per-foot used by drawCoverage (set during render)
 let ppf_g = 1;
 
+// Global mouse position in canvas CSS pixels (updated on mousemove)
+let mousePos = { x: 0, y: 0 };
+
 // ── Utility Functions ────────────────────────────────────────
 
 /** Convert degrees to radians */
@@ -205,6 +208,7 @@ function setPosture(p) {
 
 function collapseGroup(el) {
     const body = el.querySelector('.control-group-body');
+    body.style.overflow = 'hidden';
     body.style.maxHeight = body.scrollHeight + 'px';
     body.style.opacity = '1';
     requestAnimationFrame(() => requestAnimationFrame(() => {
@@ -226,6 +230,7 @@ function expandGroup(el) {
     body.addEventListener('transitionend', function handler(e) {
         if (e.propertyName !== 'max-height') return;
         body.style.maxHeight = 'none';
+        body.style.overflow = 'visible';
         body.removeEventListener('transitionend', handler);
     });
 }
@@ -244,6 +249,7 @@ function initGroups() {
             body.style.maxHeight = 'none';
             body.style.opacity = '1';
             body.style.pointerEvents = '';
+            body.style.overflow = 'visible';
         } else {
             body.style.maxHeight = '0';
             body.style.opacity = '0';
@@ -791,8 +797,9 @@ function drawRoom(rx, ry, rw, rl, ppf) {
 
 /**
  * Draw the viewing-angle cone (AVIXA 60° guideline).
+ * @param {boolean} isHovered - Whether the mouse is inside the cone
  */
-function drawViewAngle(ox, dispY, rl, ppf) {
+function drawViewAngle(ox, dispY, rl, ppf, isHovered) {
     const vr = state.roomLength * ppf;
     const hv = deg2rad(30); // half of 60°
 
@@ -822,6 +829,35 @@ function drawViewAngle(ox, dispY, rl, ppf) {
     ctx.stroke();
 
     ctx.setLineDash([]);
+
+    // Hover label
+    if (isHovered) {
+        const labelX = ox;
+        const labelY = dispY + vr * 0.5;
+        const text = 'Viewing Angle (60°)';
+
+        ctx.font = '500 12px "Satoshi", sans-serif';
+        const textWidth = ctx.measureText(text).width;
+        const px = 8, py = 5;
+
+        // Background pill
+        ctx.fillStyle = 'rgba(0,0,0,0.75)';
+        ctx.beginPath();
+        ctx.roundRect(
+            labelX - textWidth / 2 - px,
+            labelY - 10 - py,
+            textWidth + px * 2,
+            20 + py * 2,
+            4
+        );
+        ctx.fill();
+
+        // Label text
+        ctx.fillStyle = 'rgba(255,255,255,0.9)';
+        ctx.textAlign = 'center';
+        ctx.textBaseline = 'middle';
+        ctx.fillText(text, labelX, labelY);
+    }
 }
 
 /**
@@ -1103,6 +1139,21 @@ function updateHeaderDOM(eq) {
 //  MAIN TOP-DOWN RENDER
 // ═══════════════════════════════════════════════════════════════
 
+/**
+ * Returns true if the current mousePos is inside the 60° viewing-angle cone.
+ * All coordinates are in CSS pixels (pre-DPR).
+ */
+function isMouseInViewCone(ox, dispY, rl, ppf) {
+    const vr = state.roomLength * ppf;
+    const hv = deg2rad(30);
+    const dx = mousePos.x - ox;
+    const dy = mousePos.y - dispY;
+    const dist = Math.sqrt(dx * dx + dy * dy);
+    if (dist > vr) return false;
+    const angle = Math.atan2(dy, dx);
+    return Math.abs(angle - Math.PI / 2) <= hv;
+}
+
 function render() {
     const dpr = window.devicePixelRatio || 1;
     const container = document.querySelector('.canvas-container');
@@ -1179,7 +1230,8 @@ function render() {
 
     // ── Viewing angle overlay ────────────────────────────
     if (state.showViewAngle) {
-        drawViewAngle(ox, dispY, rl, ppf);
+        const hovered = isMouseInViewCone(ox, dispY, rl, ppf);
+        drawViewAngle(ox, dispY, rl, ppf, hovered);
     }
 
     // ── Coverage arcs ────────────────────────────────────
@@ -1790,6 +1842,11 @@ function getDragMetrics(e) {
 
 // ── Cursor feedback on hover ─────────────────────────────────
 canvas.addEventListener('mousemove', e => {
+    // Always track mouse position in CSS pixels for cone hover detection
+    const _rect = canvas.getBoundingClientRect();
+    mousePos.x = e.clientX - _rect.left;
+    mousePos.y = e.clientY - _rect.top;
+
     if (state.viewMode !== 'top' || isDraggingTable || isDraggingCenter) return;
     const { mx, my, ppf, ox, ry, wt, cX, cY } = getDragMetrics(e);
 
@@ -1812,6 +1869,9 @@ canvas.addEventListener('mousemove', e => {
     }
 
     canvas.style.cursor = onTarget ? 'grab' : '';
+
+    // Redraw so the cone hover label appears/disappears in real time
+    if (state.showViewAngle) scheduleRender();
 });
 
 // ── Drag state ───────────────────────────────────────────────
@@ -1888,6 +1948,8 @@ canvas.addEventListener('mouseleave', () => {
     isDraggingTable = false;
     isDraggingCenter = false;
     canvas.style.cursor = '';
+    mousePos = { x: -9999, y: -9999 };
+    if (state.showViewAngle) scheduleRender();
 });
 
 // ── Room vs Table Dimension Validation ───────────────────────
