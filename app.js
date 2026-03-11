@@ -440,6 +440,19 @@ function bindSelect(id, sk) {
             document.getElementById('val-table-width').textContent = formatFtIn(m);
         }
 
+        // Auto-scale display size for specific board models
+        if (sk === 'videoBar') {
+            if (this.value === 'neat-board-50') {
+                state.displaySize = 50;
+                document.getElementById('display-size').value = 50;
+                document.getElementById('val-display-size').textContent = '50"';
+            } else if (this.value === 'neat-board-pro') {
+                state.displaySize = 65;
+                document.getElementById('display-size').value = 65;
+                document.getElementById('val-display-size').textContent = '65"';
+            }
+        }
+
         pushHistory();
         render();
     });
@@ -1157,8 +1170,8 @@ function isMouseInViewCone(ox, dispY, rl, ppf) {
 function render() {
     const dpr = window.devicePixelRatio || 1;
     const container = document.querySelector('.canvas-container');
-    const cw = container.clientWidth - 60;
-    const ch = container.clientHeight - 60;
+    const cw = container.clientWidth - 64;
+    const ch = container.clientHeight - 64;
 
     // Delegate to POV renderer if in first-person mode
     if (state.viewMode === 'pov') {
@@ -1343,7 +1356,7 @@ function renderPOV(cw, ch, dpr) {
     const ehi = eq.height * 12; // equipment height in inches
     let dvc; // device vertical center (inches)
     if (eq.type === 'board') {
-        dvc = dyb - ehi / 2;
+        dvc = dyt - 1.5; // Top portion of the board display
     } else if (state.mountPos === 'above') {
         dvc = dyt + ehi / 2 + 2;
     } else {
@@ -1365,6 +1378,14 @@ function renderPOV(cw, ch, dpr) {
         ctx.beginPath();
         const ls = Math.max(0.5, 1000 / Math.max(0.5, vd));
         ctx.arc(cx - vo * ls, (a.y + b.y) / 2, Math.max(2, (b.y - a.y) * 0.3), 0, Math.PI * 2);
+        ctx.fill();
+    } else {
+        // Lens dot within board bezel
+        ctx.fillStyle = 'rgba(91, 156, 245, 0.60)';
+        ctx.beginPath();
+        const ls = Math.max(0.5, 1000 / Math.max(0.5, vd));
+        const boardLensP = proj(0, dvc, dz);
+        ctx.arc(cx - vo * ls, boardLensP.y, 2.5, 0, Math.PI * 2);
         ctx.fill();
     }
 
